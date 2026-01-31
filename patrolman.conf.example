@@ -1,0 +1,29 @@
+# Patrolman Configuration File
+# This file contains API keys and configuration for external services
+# 
+# SECURITY: Keep this file private and do not commit to version control
+# Add to .gitignore: patrolman.conf
+
+# abuse.ch API Key (used for both ThreatFox and MalwareBazaar)
+# Get your free API key at: https://abuse.ch/register/
+# This single key works for all abuse.ch services
+# Leave empty to disable config file loading (use environment variable: THREATFOX_API_KEY)
+threatfox_api_key=key_goes_here
+
+# RIPE API (No key required - public API)
+# Leaving this for documentation purposes
+# ripe_api_url=https://stat.ripe.net/data/whois/data.json
+
+# Rate Limiting Configuration
+# Adjust these values if you encounter 403 Forbidden (rate limit) errors
+# api_request_delay: Seconds to wait between API requests (default: 0.1)
+api_request_delay=1.0
+
+# api_max_retries: Maximum number of retry attempts on failed requests (default: 3)
+api_max_retries=3
+
+# api_retry_backoff: Exponential backoff multiplier for retries (default: 2.0)
+# Retry delays: 1s, 2s, 4s with backoff=2.0
+api_retry_backoff=2.0
+
+# Future API keys can be added here

@@ -1,0 +1,75 @@
+[package]
+name = "patrolman"
+version = "0.2.0"
+edition = "2021"
+authors = ["Your Name"]
+description = "Windows security analysis tool for networked processes with malware detection"
+license = "MIT"
+
+[dependencies]
+# Process enumeration and system info
+sysinfo = "0.32"
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_System_Threading",
+    "Win32_System_ProcessStatus",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_Networking_WinSock",
+] }
+
+# HTTP client for API calls
+reqwest = { version = "0.12", features = ["json", "blocking"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+futures = "0.3"
+
+# JSON serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# CLI argument parsing
+clap = { version = "4.5", features = ["derive"] }
+
+# IP address handling
+ipnetwork = "0.20"
+
+# Terminal output
+indicatif = "0.17"
+colored = "2.1"
+comfy-table = "7.1"
+terminal_size = "0.4"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Cryptographic hashing
+sha2 = "0.10"
+
+# Configuration file parsing
+configparser = "3.1"
+
+# Hostname
+hostname = "0.4"
+
+# Time handling
+chrono = "0.4"
+
+# Rate limiting and lazy initialization
+async-trait = "0.1"
+lazy_static = "1.5"
+rayon = "1.11.0"
+
+[build-dependencies]
+winres = "0.1"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
