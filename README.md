@@ -136,8 +136,6 @@ patrolman/
 │   └── display.rs        # Console output & formatting
 ├── assets/
 │   └── Users-Police-icon.ico  # Application icon
-├── docs/
-│   └── SANS_Find_Evil_Know_Normal.md  # Hunt Evil reference
 ├── build.rs              # Windows resource embedding
 ├── Cargo.toml            # Dependencies & metadata
 └── patrolman.conf        # Runtime configuration
