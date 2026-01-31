@@ -7,7 +7,7 @@
  / ____/ /_/ / /_/ /  / /_/ / / / / / / / /_/ / / / /
 /_/    \__,_/\__/_/   \____/_/_/ /_/ /_/\__,_/_/ /_/
 
-    🛡️  Windows Security Analysis Tool v0.2.0
+    Windows Security Analysis Tool v2.1.0
     Hunt Evil • CTI Enrichment • Network Forensics
 ```
 
