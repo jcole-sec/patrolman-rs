@@ -255,7 +255,7 @@ Options:
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Enumeration   │───▶│   Hunt Evil     │───▶│ CTI Enrichment  │───▶│     Output      │
+│   Enumeration   │──▶│   Hunt Evil     │───▶│ CTI Enrichment  │──▶│     Output      │
 │                 │    │                 │    │                 │    │                 │
 │ • sysinfo crate │    │ • SANS baselines│    │ • ThreatFox     │    │ • JSON/TSV      │
 │ • Windows APIs  │    │ • Path checks   │    │ • MalwareBazaar │    │ • Console table │
