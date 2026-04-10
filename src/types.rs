@@ -20,7 +20,7 @@ pub struct ProcessData {
     pub puser: String,
     pub cmdline: String,
     pub phash: String,
-    
+
     // Network information - using Arc<str> for common values
     pub lip: String,
     pub lport: u16,
@@ -35,20 +35,23 @@ pub struct ProcessData {
     #[serde(serialize_with = "serialize_arc_str")]
     #[serde(deserialize_with = "deserialize_arc_str")]
     pub rip_type: Arc<str>,
-    
+
     // Hunt Evil flags
     pub hunt_flags: Vec<String>,
-    
+
+    // Normalized threat score (0-100)
+    pub risk_score: u8,
+
     // CTI enrichment - ThreatFox Hash
     pub hash_cti_confidence: String,
     pub hash_cti_threat_type: String,
     pub hash_cti_malware: String,
-    
+
     // CTI enrichment - MalwareBazaar Hash
     pub hash_mb_signature: String,
     pub hash_mb_tags: String,
     pub hash_mb_file_type: String,
-    
+
     // CTI enrichment - Remote IP
     pub rip_cidr: String,
     pub rip_netname: String,
@@ -93,6 +96,7 @@ impl Default for ProcessData {
             lip_type: INTERNED_BLANK.clone(),
             rip_type: INTERNED_BLANK.clone(),
             hunt_flags: Vec::new(),
+            risk_score: 0,
             hash_cti_confidence: BLANK.to_string(),
             hash_cti_threat_type: BLANK.to_string(),
             hash_cti_malware: BLANK.to_string(),

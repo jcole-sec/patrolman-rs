@@ -81,7 +81,7 @@ pub async fn run_cti_lookups(
         if pdata.phash != BLANK && config.threatfox_api_key.is_some() {
             unique_hashes.insert(pdata.phash.clone());
         }
-        
+
         // Collect unique public IPs
         if pdata.rip != BLANK && get_ip_type(&pdata.rip) == "PUBLIC" {
             unique_ips.insert(pdata.rip.clone());
@@ -91,9 +91,11 @@ pub async fn run_cti_lookups(
     let total_processes = process_list.len();
     let unique_hash_count = unique_hashes.len();
     let unique_ip_count = unique_ips.len();
-    
-    debug!("Deduplication: {} processes → {} unique hashes, {} unique IPs", 
-          total_processes, unique_hash_count, unique_ip_count);
+
+    debug!(
+        "Deduplication: {} processes → {} unique hashes, {} unique IPs",
+        total_processes, unique_hash_count, unique_ip_count
+    );
 
     // Step 2: Perform deduplicated lookups - run ThreatFox and MalwareBazaar concurrently
     let (hash_cache, mb_cache, (ripe_cache, ip_cache)) = tokio::join!(
@@ -128,7 +130,7 @@ pub async fn run_cti_lookups(
                     pdata.hash_cti_threat_type = hash_data.1.clone();
                     pdata.hash_cti_malware = hash_data.2.clone();
                 }
-                
+
                 // Apply MalwareBazaar hash data from cache
                 if let Some(mb_data) = mb_cache.get(&pdata.phash) {
                     pdata.hash_mb_signature = mb_data.0.clone();
@@ -144,7 +146,7 @@ pub async fn run_cti_lookups(
                     pdata.rip_netname = ripe_data.1.clone();
                     pdata.rip_country = ripe_data.2.clone();
                 }
-                
+
                 if let Some(ip_data) = ip_cache.get(&pdata.rip) {
                     pdata.rip_cti_confidence = ip_data.0.clone();
                     pdata.rip_cti_threat_type = ip_data.1.clone();
@@ -167,7 +169,7 @@ async fn lookup_unique_hashes(
     delay: f64,
 ) -> HashMap<String, (String, String, String)> {
     let mut cache = HashMap::new();
-    
+
     if hashes.is_empty() || api_key.is_none() {
         return cache;
     }
@@ -177,7 +179,7 @@ async fn lookup_unique_hashes(
     let delay_duration = Duration::from_secs_f64(delay);
 
     let hash_vec: Vec<String> = hashes.into_iter().collect();
-    
+
     for batch in hash_vec.chunks(batch_size) {
         let tasks: Vec<_> = batch
             .iter()
@@ -192,14 +194,16 @@ async fn lookup_unique_hashes(
             .collect();
 
         let results = futures::future::join_all(tasks).await;
-        
+
         for (hash, result) in results {
             match result {
                 Ok(data) => {
                     cache.insert(
                         hash,
                         (
-                            data.confidence_level.map(|c| c.to_string()).unwrap_or_else(|| BLANK.to_string()),
+                            data.confidence_level
+                                .map(|c| c.to_string())
+                                .unwrap_or_else(|| BLANK.to_string()),
                             data.threat_type.unwrap_or_else(|| BLANK.to_string()),
                             data.malware_printable.unwrap_or_else(|| BLANK.to_string()),
                         ),
@@ -210,7 +214,7 @@ async fn lookup_unique_hashes(
                 }
             }
         }
-        
+
         sleep(delay_duration).await;
     }
 
@@ -223,10 +227,13 @@ async fn lookup_unique_ips(
     ips: HashSet<String>,
     api_key: Option<&str>,
     delay: f64,
-) -> (HashMap<String, (String, String, String)>, HashMap<String, (String, String, String)>) {
+) -> (
+    HashMap<String, (String, String, String)>,
+    HashMap<String, (String, String, String)>,
+) {
     let mut ripe_cache = HashMap::new();
     let mut ip_cache = HashMap::new();
-    
+
     if ips.is_empty() {
         return (ripe_cache, ip_cache);
     }
@@ -234,7 +241,7 @@ async fn lookup_unique_ips(
     let batch_size = 10;
     let delay_duration = Duration::from_secs_f64(delay);
     let ip_vec: Vec<String> = ips.into_iter().collect();
-    
+
     for batch in ip_vec.chunks(batch_size) {
         let tasks: Vec<_> = batch
             .iter()
@@ -243,7 +250,7 @@ async fn lookup_unique_ips(
                 let api_key_clone = api_key.map(|s| s.to_string());
                 async move {
                     let ripe_result = ripe_lookup(client, &ip).await;
-                    
+
                     let ip_result = if let Some(key) = api_key_clone {
                         threatfox_ip_lookup(client, &ip, &key).await
                     } else {
@@ -253,14 +260,14 @@ async fn lookup_unique_ips(
                             malware_printable: None,
                         })
                     };
-                    
+
                     (ip, ripe_result, ip_result)
                 }
             })
             .collect();
 
         let results = futures::future::join_all(tasks).await;
-        
+
         for (ip, ripe_result, ip_result) in results {
             // Process RIPE data
             match ripe_result {
@@ -280,21 +287,23 @@ async fn lookup_unique_ips(
                         .or_else(|| ripe_data.get("Country"))
                         .cloned()
                         .unwrap_or_else(|| BLANK.to_string());
-                    
+
                     ripe_cache.insert(ip.clone(), (cidr, netname, country));
                 }
                 Err(e) => {
                     error!("RIPE lookup failed for {}: {}", ip, e);
                 }
             }
-            
+
             // Process ThreatFox IP data
             match ip_result {
                 Ok(data) => {
                     ip_cache.insert(
                         ip,
                         (
-                            data.confidence_level.map(|c| c.to_string()).unwrap_or_else(|| BLANK.to_string()),
+                            data.confidence_level
+                                .map(|c| c.to_string())
+                                .unwrap_or_else(|| BLANK.to_string()),
                             data.threat_type.unwrap_or_else(|| BLANK.to_string()),
                             data.malware_printable.unwrap_or_else(|| BLANK.to_string()),
                         ),
@@ -305,7 +314,7 @@ async fn lookup_unique_ips(
                 }
             }
         }
-        
+
         sleep(delay_duration).await;
     }
 
@@ -354,7 +363,8 @@ async fn threatfox_hash_lookup(
     // Handle response - ThreatFox may return no_result status without data field
     match response.json::<ThreatFoxResponse>().await {
         Ok(threat_response) => {
-            Ok(threat_response.data
+            Ok(threat_response
+                .data
                 .and_then(|mut v| v.pop())
                 .unwrap_or(ThreatFoxData {
                     confidence_level: None,
@@ -381,7 +391,7 @@ async fn lookup_unique_hashes_malwarebazaar(
     delay: f64,
 ) -> HashMap<String, (String, String, String)> {
     let mut cache = HashMap::new();
-    
+
     if hashes.is_empty() || api_key.is_none() {
         return cache;
     }
@@ -390,7 +400,7 @@ async fn lookup_unique_hashes_malwarebazaar(
     let batch_size = 10;
     let delay_duration = Duration::from_secs_f64(delay);
     let hash_vec: Vec<String> = hashes.into_iter().collect();
-    
+
     for batch in hash_vec.chunks(batch_size) {
         let tasks: Vec<_> = batch
             .iter()
@@ -405,7 +415,7 @@ async fn lookup_unique_hashes_malwarebazaar(
             .collect();
 
         let results = futures::future::join_all(tasks).await;
-        
+
         for (hash, result) in results {
             match result {
                 Ok(data) => {
@@ -413,7 +423,9 @@ async fn lookup_unique_hashes_malwarebazaar(
                         hash,
                         (
                             data.signature.unwrap_or_else(|| BLANK.to_string()),
-                            data.tags.map(|t| t.join(", ")).unwrap_or_else(|| BLANK.to_string()),
+                            data.tags
+                                .map(|t| t.join(", "))
+                                .unwrap_or_else(|| BLANK.to_string()),
                             data.file_type.unwrap_or_else(|| BLANK.to_string()),
                         ),
                     );
@@ -424,7 +436,7 @@ async fn lookup_unique_hashes_malwarebazaar(
                 }
             }
         }
-        
+
         sleep(delay_duration).await;
     }
 
@@ -438,10 +450,7 @@ async fn malwarebazaar_hash_lookup(
     api_key: &str,
 ) -> Result<MalwareBazaarData> {
     // MalwareBazaar uses form-urlencoded data, not JSON
-    let params = [
-        ("query", "get_info"),
-        ("hash", hash),
-    ];
+    let params = [("query", "get_info"), ("hash", hash)];
 
     let response = match client
         .post(MALWAREBAZAAR_URL)
@@ -472,7 +481,8 @@ async fn malwarebazaar_hash_lookup(
     // Handle response - MalwareBazaar may return no_result status
     match response.json::<MalwareBazaarResponse>().await {
         Ok(mb_response) => {
-            Ok(mb_response.data
+            Ok(mb_response
+                .data
                 .and_then(|mut v| v.pop())
                 .unwrap_or(MalwareBazaarData {
                     signature: None,
@@ -492,11 +502,7 @@ async fn malwarebazaar_hash_lookup(
 }
 
 /// Perform ThreatFox IP lookup
-async fn threatfox_ip_lookup(
-    client: &Client,
-    ip: &str,
-    api_key: &str,
-) -> Result<ThreatFoxData> {
+async fn threatfox_ip_lookup(client: &Client, ip: &str, api_key: &str) -> Result<ThreatFoxData> {
     let body = json!({
         "query": "search_ioc",
         "search_term": ip
@@ -533,7 +539,8 @@ async fn threatfox_ip_lookup(
     // Handle response - ThreatFox may return no_result status without data field
     match response.json::<ThreatFoxResponse>().await {
         Ok(threat_response) => {
-            Ok(threat_response.data
+            Ok(threat_response
+                .data
                 .and_then(|mut v| v.pop())
                 .unwrap_or(ThreatFoxData {
                     confidence_level: None,
@@ -555,7 +562,7 @@ async fn threatfox_ip_lookup(
 /// Perform RIPE lookup
 async fn ripe_lookup(client: &Client, ip: &str) -> Result<HashMap<String, String>> {
     let url = format!("{}{}", RIPE_URL_TEMPLATE, ip);
-    
+
     let response = match client.get(&url).send().await {
         Ok(resp) => resp,
         Err(_) => {
@@ -563,7 +570,7 @@ async fn ripe_lookup(client: &Client, ip: &str) -> Result<HashMap<String, String
             return Ok(HashMap::new());
         }
     };
-    
+
     if response.status() != StatusCode::OK {
         return Ok(HashMap::new());
     }
@@ -575,7 +582,7 @@ async fn ripe_lookup(client: &Client, ip: &str) -> Result<HashMap<String, String
             return Ok(HashMap::new());
         }
     };
-    
+
     let mut result = HashMap::new();
 
     if let Some(data) = ripe_response.data {

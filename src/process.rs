@@ -10,16 +10,11 @@ use windows::core::PWSTR;
 use windows::Win32::Foundation::{CloseHandle, HANDLE, NO_ERROR};
 use windows::Win32::NetworkManagement::IpHelper::{
     GetExtendedTcpTable, GetExtendedUdpTable, MIB_TCPROW_OWNER_PID, MIB_TCPTABLE_OWNER_PID,
-    MIB_UDPROW_OWNER_PID, MIB_UDPTABLE_OWNER_PID, TCP_TABLE_OWNER_PID_ALL,
-    UDP_TABLE_OWNER_PID,
+    MIB_UDPROW_OWNER_PID, MIB_UDPTABLE_OWNER_PID, TCP_TABLE_OWNER_PID_ALL, UDP_TABLE_OWNER_PID,
 };
 use windows::Win32::Networking::WinSock::{AF_INET, IN_ADDR, IN_ADDR_0};
-use windows::Win32::Security::{
-    GetTokenInformation, TokenUser, TOKEN_QUERY, TOKEN_USER,
-};
-use windows::Win32::System::ProcessStatus::{
-    K32GetProcessImageFileNameW,
-};
+use windows::Win32::Security::{GetTokenInformation, TokenUser, TOKEN_QUERY, TOKEN_USER};
+use windows::Win32::System::ProcessStatus::K32GetProcessImageFileNameW;
 use windows::Win32::System::Threading::{
     OpenProcess, OpenProcessToken, PROCESS_QUERY_INFORMATION, PROCESS_QUERY_LIMITED_INFORMATION,
 };
@@ -87,7 +82,7 @@ fn ntohs(port: u16) -> u16 {
 /// Get TCP connections for all processes using Windows API
 fn get_tcp_connections() -> Result<HashMap<u32, Vec<(String, u16, String, u16)>>> {
     let mut connections: HashMap<u32, Vec<(String, u16, String, u16)>> = HashMap::new();
-    
+
     unsafe {
         // First call to get the required buffer size
         let mut size: u32 = 0;
@@ -137,7 +132,7 @@ fn get_tcp_connections() -> Result<HashMap<u32, Vec<(String, u16, String, u16)>>
                     S_addr: entry.dwRemoteAddr,
                 },
             };
-            
+
             let lip = in_addr_to_string(&local_addr);
             let lport = ntohs(entry.dwLocalPort as u16);
             let rip = in_addr_to_string(&remote_addr);
@@ -156,7 +151,7 @@ fn get_tcp_connections() -> Result<HashMap<u32, Vec<(String, u16, String, u16)>>
 /// Get UDP connections for all processes using Windows API
 fn get_udp_connections() -> Result<HashMap<u32, Vec<(String, u16, String, u16)>>> {
     let mut connections: HashMap<u32, Vec<(String, u16, String, u16)>> = HashMap::new();
-    
+
     unsafe {
         // First call to get the required buffer size
         let mut size: u32 = 0;
@@ -201,7 +196,7 @@ fn get_udp_connections() -> Result<HashMap<u32, Vec<(String, u16, String, u16)>>
                     S_addr: entry.dwLocalAddr,
                 },
             };
-            
+
             let lip = in_addr_to_string(&local_addr);
             let lport = ntohs(entry.dwLocalPort as u16);
             let rip = "0.0.0.0".to_string(); // UDP has no remote address in listening state
@@ -238,7 +233,7 @@ fn get_process_name_by_pid(pid: u32) -> String {
         }
 
         let path = String::from_utf16_lossy(&buffer[..result as usize]);
-        
+
         // Extract just the filename from the full path
         if let Some(filename) = path.split('\\').last() {
             filename.to_string()
@@ -275,13 +270,7 @@ fn get_process_user(pid: u32) -> String {
 
         // Get token user information
         let mut return_length: u32 = 0;
-        let _ = GetTokenInformation(
-            token_handle,
-            TokenUser,
-            None,
-            0,
-            &mut return_length,
-        );
+        let _ = GetTokenInformation(token_handle, TokenUser, None, 0, &mut return_length);
 
         if return_length == 0 {
             let _ = CloseHandle(token_handle);
@@ -312,13 +301,13 @@ fn get_process_user(pid: u32) -> String {
         let mut sid_string = PWSTR::null();
         if ConvertSidToStringSidW(sid, &mut sid_string).is_ok() {
             let sid_str = sid_string.to_string().unwrap_or_else(|_| BLANK.to_string());
-            
+
             // Try to resolve SID to account name
             use windows::Win32::Security::LookupAccountSidW;
             let mut name_size = 0u32;
             let mut domain_size = 0u32;
             let mut sid_type = windows::Win32::Security::SidTypeUser;
-            
+
             let _ = LookupAccountSidW(
                 None,
                 sid,
@@ -332,7 +321,7 @@ fn get_process_user(pid: u32) -> String {
             if name_size > 0 && domain_size > 0 {
                 let mut name = vec![0u16; name_size as usize];
                 let mut domain = vec![0u16; domain_size as usize];
-                
+
                 if LookupAccountSidW(
                     None,
                     sid,
@@ -346,14 +335,14 @@ fn get_process_user(pid: u32) -> String {
                 {
                     let domain_str = String::from_utf16_lossy(&domain[..domain_size as usize - 1]);
                     let name_str = String::from_utf16_lossy(&name[..name_size as usize - 1]);
-                    
+
                     let _ = CloseHandle(token_handle);
                     let _ = CloseHandle(process_handle);
-                    
+
                     return format!("{}\\{}", domain_str, name_str);
                 }
             }
-            
+
             let _ = CloseHandle(token_handle);
             let _ = CloseHandle(process_handle);
             return sid_str;
@@ -371,11 +360,11 @@ pub async fn get_process_list(include_test_data: bool) -> Result<Vec<ProcessData
     system.refresh_all();
 
     let process_count = system.processes().len();
-    
+
     // Pre-allocate with capacity for better performance
     let mut process_list = Vec::with_capacity(process_count * 5); // Multiple entries per process for each connection
     let mut pid_to_name: HashMap<u32, String> = HashMap::with_capacity(process_count);
-    
+
     for (pid, process) in system.processes() {
         pid_to_name.insert(pid.as_u32(), process.name().to_string_lossy().to_string());
     }
@@ -385,7 +374,8 @@ pub async fn get_process_list(include_test_data: bool) -> Result<Vec<ProcessData
     let udp_connections = get_udp_connections().unwrap_or_default();
 
     // Collect unique executable paths for parallel hashing
-    let unique_paths: HashSet<PathBuf> = system.processes()
+    let unique_paths: HashSet<PathBuf> = system
+        .processes()
         .values()
         .filter_map(|p| p.exe().map(|e| e.to_path_buf()))
         .collect();
@@ -393,39 +383,35 @@ pub async fn get_process_list(include_test_data: bool) -> Result<Vec<ProcessData
     // Parallel file hashing using rayon (I/O-bound, benefits from parallelism)
     let hash_cache: HashMap<PathBuf, String> = unique_paths
         .into_par_iter()
-        .filter_map(|path| {
-            calculate_sha256(&path)
-                .ok()
-                .map(|hash| (path, hash))
-        })
+        .filter_map(|path| calculate_sha256(&path).ok().map(|hash| (path, hash)))
         .collect();
-    
+
     for (pid, process) in system.processes() {
         let pid_u32 = pid.as_u32();
-        
+
         // Get process attributes
         let pname = process.name().to_string_lossy().to_string();
-        let ppath = process.exe()
+        let ppath = process
+            .exe()
             .and_then(|p| p.to_str())
             .unwrap_or(BLANK)
             .to_string();
-        
+
         // Use Windows API for more accurate user information
         let puser = get_process_user(pid_u32);
-        
-        let cmdline = process.cmd()
+
+        let cmdline = process
+            .cmd()
             .iter()
             .map(|s| s.to_string_lossy().to_string())
             .collect::<Vec<_>>()
             .join(" ");
-        
-        let parent_pid = process.parent()
-            .map(|p| p.as_u32())
-            .unwrap_or(0);
-        
+
+        let parent_pid = process.parent().map(|p| p.as_u32()).unwrap_or(0);
+
         // Use Windows API for accurate parent process name
         let ppid_name = get_process_name_by_pid(parent_pid);
-        
+
         // Lookup hash from pre-computed cache (parallel hashing)
         let phash = if ppath != BLANK && !ppath.is_empty() {
             hash_cache
@@ -441,7 +427,7 @@ pub async fn get_process_list(include_test_data: bool) -> Result<Vec<ProcessData
             for (lip, lport, rip, rport) in connections {
                 let lip_type_str = get_ip_type(lip);
                 let rip_type_str = get_ip_type(rip);
-                
+
                 let pdata = ProcessData {
                     pid: pid_u32,
                     pname: pname.clone(),
@@ -470,7 +456,7 @@ pub async fn get_process_list(include_test_data: bool) -> Result<Vec<ProcessData
             for (lip, lport, rip, rport) in connections {
                 let lip_type_str = get_ip_type(lip);
                 let rip_type_str = get_ip_type(rip);
-                
+
                 let pdata = ProcessData {
                     pid: pid_u32,
                     pname: pname.clone(),
@@ -544,9 +530,7 @@ fn get_test_data() -> Vec<ProcessData> {
             protocol: INTERNED_TCP.clone(),
             lip_type: std::sync::Arc::from("PRIVATE"),
             rip_type: std::sync::Arc::from("PUBLIC"),
-            hunt_flags: vec![
-                "Services process should have WinInit as parent".to_string(),
-            ],
+            hunt_flags: vec!["Services process should have WinInit as parent".to_string()],
             ..Default::default()
         },
         ProcessData {
@@ -565,9 +549,7 @@ fn get_test_data() -> Vec<ProcessData> {
             protocol: INTERNED_TCP.clone(),
             lip_type: std::sync::Arc::from("PRIVATE"),
             rip_type: std::sync::Arc::from("PUBLIC"),
-            hunt_flags: vec![
-                "Services should be running as the local system user".to_string(),
-            ],
+            hunt_flags: vec!["Services should be running as the local system user".to_string()],
             ..Default::default()
         },
     ]

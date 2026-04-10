@@ -25,8 +25,7 @@ pub fn display_banner() {
     );
     println!(
         "{}",
-        "    Hunt Evil • CTI Enrichment • Network Forensics\n"
-            .bright_black()
+        "    Hunt Evil • CTI Enrichment • Network Forensics\n".bright_black()
     );
 }
 
@@ -34,11 +33,7 @@ pub fn display_banner() {
 pub fn display_phase(phase: &str, status: PhaseStatus) {
     match status {
         PhaseStatus::Starting => {
-            println!(
-                "{} {}",
-                "▶".bright_cyan().bold(),
-                phase.cyan()
-            );
+            println!("{} {}", "▶".bright_cyan().bold(), phase.cyan());
         }
         PhaseStatus::Complete(count) => {
             println!(
@@ -106,7 +101,9 @@ pub fn display_summary(
     println!(
         "{}{}{}",
         "║".bright_blue(),
-        "                           📊 SCAN SUMMARY                                    ".bright_white().bold(),
+        "                           📊 SCAN SUMMARY                                    "
+            .bright_white()
+            .bold(),
         "║".bright_blue()
     );
     println!(
@@ -210,7 +207,9 @@ pub fn display_threats(process_list: &[ProcessData]) {
     if threats.is_empty() {
         println!(
             "{}",
-            "  ✅ No threats or anomalies detected".bright_green().bold()
+            "  ✅ No threats or anomalies detected"
+                .bright_green()
+                .bold()
         );
         return;
     }
@@ -233,11 +232,7 @@ pub fn display_threats(process_list: &[ProcessData]) {
         // Show hunt evil flags
         if !pdata.hunt_flags.is_empty() {
             for flag in &pdata.hunt_flags {
-                println!(
-                    "│   {} {}",
-                    "🚩".to_string(),
-                    flag.yellow()
-                );
+                println!("│   {} {}", "🚩".to_string(), flag.yellow());
             }
         }
 
@@ -298,23 +293,38 @@ pub fn display_threats(process_list: &[ProcessData]) {
 pub fn display_results(process_list: &[ProcessData]) -> Result<()> {
     let mut table = Table::new();
     table.load_preset(UTF8_FULL);
-    
+
     // Get terminal width and set table to fit
     let term_width = terminal_size::terminal_size()
         .map(|(w, _)| w.0 as u16)
         .unwrap_or(120);
-    
+
     table.set_width(term_width);
     table.set_content_arrangement(ContentArrangement::Dynamic);
-    
+
     // Header
     table.set_header(vec![
-        Cell::new("PID").fg(Color::Cyan).add_attribute(Attribute::Bold),
-        Cell::new("Process").fg(Color::Cyan).add_attribute(Attribute::Bold),
-        Cell::new("User").fg(Color::Cyan).add_attribute(Attribute::Bold),
-        Cell::new("Local IP:Port").fg(Color::Cyan).add_attribute(Attribute::Bold),
-        Cell::new("Remote IP:Port").fg(Color::Cyan).add_attribute(Attribute::Bold),
-        Cell::new("Flags").fg(Color::Cyan).add_attribute(Attribute::Bold),
+        Cell::new("PID")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Process")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Risk")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("User")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Local IP:Port")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Remote IP:Port")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Flags")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
     ]);
 
     // Rows with color coding based on threat level
@@ -335,10 +345,10 @@ pub fn display_results(process_list: &[ProcessData]) -> Result<()> {
         let rip_port = format!("{}:{}", pdata.rip, pdata.rport);
 
         // Determine threat level for color coding
-        let has_malware = (pdata.hash_cti_malware != "-" && pdata.hash_cti_malware != "") ||
-                          (pdata.rip_cti_malware != "-" && pdata.rip_cti_malware != "");
-        let has_threat = (pdata.hash_cti_confidence != "-" && pdata.hash_cti_confidence != "") ||
-                         (pdata.rip_cti_confidence != "-" && pdata.rip_cti_confidence != "");
+        let has_malware = (pdata.hash_cti_malware != "-" && pdata.hash_cti_malware != "")
+            || (pdata.rip_cti_malware != "-" && pdata.rip_cti_malware != "");
+        let has_threat = (pdata.hash_cti_confidence != "-" && pdata.hash_cti_confidence != "")
+            || (pdata.rip_cti_confidence != "-" && pdata.rip_cti_confidence != "");
         let has_flags = !pdata.hunt_flags.is_empty();
 
         // Color code rows: RED for malware, YELLOW for flags, default for clean
@@ -353,6 +363,7 @@ pub fn display_results(process_list: &[ProcessData]) -> Result<()> {
         let mut row = vec![
             Cell::new(pdata.pid.to_string()),
             Cell::new(&pdata.pname),
+            Cell::new(pdata.risk_score.to_string()),
             Cell::new(&pdata.puser),
             Cell::new(lip_port),
             Cell::new(rip_port),
@@ -372,10 +383,7 @@ pub fn display_results(process_list: &[ProcessData]) -> Result<()> {
 }
 
 /// Write JSON output
-pub fn write_json_output<P: AsRef<Path>>(
-    process_list: &[ProcessData],
-    path: P,
-) -> Result<()> {
+pub fn write_json_output<P: AsRef<Path>>(process_list: &[ProcessData], path: P) -> Result<()> {
     let json = serde_json::to_string_pretty(process_list)?;
     let mut file = File::create(path)?;
     file.write_all(json.as_bytes())?;
@@ -383,10 +391,7 @@ pub fn write_json_output<P: AsRef<Path>>(
 }
 
 /// Write TSV output
-pub fn write_tsv_output<P: AsRef<Path>>(
-    process_list: &[ProcessData],
-    path: P,
-) -> Result<()> {
+pub fn write_tsv_output<P: AsRef<Path>>(process_list: &[ProcessData], path: P) -> Result<()> {
     let mut file = File::create(path)?;
 
     // Header
@@ -394,11 +399,32 @@ pub fn write_tsv_output<P: AsRef<Path>>(
         file,
         "{}",
         [
-            "pid", "pname", "ppid", "ppid_name", "ppath", "puser", "cmdline", "phash",
-            "lip", "lport", "rip", "rport", "protocol", "lip_type", "rip_type",
-            "hunt_flags", "hash_cti_confidence", "hash_cti_threat_type", "hash_cti_malware",
-            "rip_cidr", "rip_netname", "rip_country", "rip_cti_confidence",
-            "rip_cti_threat_type", "rip_cti_malware"
+            "pid",
+            "pname",
+            "ppid",
+            "ppid_name",
+            "ppath",
+            "puser",
+            "cmdline",
+            "phash",
+            "lip",
+            "lport",
+            "rip",
+            "rport",
+            "protocol",
+            "lip_type",
+            "rip_type",
+            "hunt_flags",
+            "risk_score",
+            "hash_cti_confidence",
+            "hash_cti_threat_type",
+            "hash_cti_malware",
+            "rip_cidr",
+            "rip_netname",
+            "rip_country",
+            "rip_cti_confidence",
+            "rip_cti_threat_type",
+            "rip_cti_malware"
         ]
         .join("\t")
     )?;
@@ -408,11 +434,11 @@ pub fn write_tsv_output<P: AsRef<Path>>(
         let flags = pdata.hunt_flags.join("|");
         writeln!(
             file,
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             pdata.pid, pdata.pname, pdata.ppid, pdata.ppid_name, pdata.ppath,
             pdata.puser, pdata.cmdline, pdata.phash, pdata.lip, pdata.lport,
             pdata.rip, pdata.rport, pdata.protocol, pdata.lip_type, pdata.rip_type,
-            flags, pdata.hash_cti_confidence, pdata.hash_cti_threat_type,
+            flags, pdata.risk_score, pdata.hash_cti_confidence, pdata.hash_cti_threat_type,
             pdata.hash_cti_malware, pdata.rip_cidr, pdata.rip_netname,
             pdata.rip_country, pdata.rip_cti_confidence, pdata.rip_cti_threat_type,
             pdata.rip_cti_malware

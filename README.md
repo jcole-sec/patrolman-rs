@@ -1,5 +1,5 @@
 # Patrolman
-
+[![Secret Scan](https://github.com/jcole-sec/patrolman-rs/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/jcole-sec/patrolman-rs/actions/workflows/secret-scan.yml)
 ```
     ____        __             __
    / __ \____ _/ /__________  / /___ ___  ____ _____
@@ -7,7 +7,7 @@
  / ____/ /_/ / /_/ /  / /_/ / / / / / / / /_/ / / / /
 /_/    \__,_/\__/_/   \____/_/_/ /_/ /_/\__,_/_/ /_/
 
-    Windows Security Analysis Tool v2.1.0
+    Windows Security Analysis Tool v2.2.0
     Hunt Evil • CTI Enrichment • Network Forensics
 ```
 
@@ -43,7 +43,7 @@ These data attributes include:
 - Process user account
 - Parent process name and ID
 
-Patrolman uses this data to run **Hunt Evil** detection and **CTI enrichment** functions.
+Patrolman uses this data to run **Hunt Evil** detection, **CTI enrichment**, and **risk scoring** functions.
 
 ### Hunt Evil Detection
 
@@ -80,9 +80,27 @@ Hash lookups are performed for all processes regardless of network activity.
 
 Tool output defaults to JSON, but also supports TSV and interactive console display with colored threat highlighting.
 
+### Continuous Scan Mode
+
+Patrolman can run once (default) or continuously on an interval:
+
+- `--interval <seconds>`: repeats scans every N seconds
+- `--duration <minutes>`: optional cap for continuous mode (`0` = run until interrupted)
+
+When running continuously, Patrolman prints per-run status and supports graceful shutdown with `Ctrl+C`.
+
+### Risk Scoring
+
+Each process record now includes a normalized `risk_score` (`0-100`) based on:
+
+- Hunt Evil anomaly flags
+- CTI malware/threat confidence signals
+- Public remote IP communication
+
 ## Future Improvements
 
-- [ ] Allow service or daemon mode for continual execution and logging
+- [x] Add scheduled continuous scan mode (`--interval`, `--duration`)
+- [x] Add normalized per-process risk scoring (`risk_score`)
 - [ ] Expand detective logic for process patterns (including common LOLBins)
 - [ ] Publish to Windows Event Log as a dedicated application
 - [ ] Add detective logic for Linux and macOS abnormal process patterns
@@ -151,8 +169,10 @@ To enable full Cyber Threat Intelligence (CTI) enrichment, register for a free A
 
 Edit `patrolman.conf` in the application directory:
 ```ini
-[api]
 threatfox_api_key=your-api-key-here
+api_request_delay=1.0
+api_max_retries=3
+api_retry_backoff=2.0
 ```
 
 **Method 2: Environment Variable**
@@ -201,6 +221,12 @@ Run as administrator (required for additional data, such as user enumeration for
 # Enable debug logging
 .\patrolman.exe --debug
 
+# Continuous scanning every 60 seconds until interrupted
+.\patrolman.exe --interval 60 --display
+
+# Continuous scanning every 30 seconds for 15 minutes
+.\patrolman.exe --interval 30 --duration 15 --display
+
 # Combine options
 .\patrolman.exe --display --tsv --public --debug
 ```
@@ -215,6 +241,8 @@ Options:
   -p, --public     Filter results to public IP addresses only
       --debug      Enable debug logging
       --test       Insert synthetic test data for validation
+      --interval   Repeat scans every N seconds (0 = run once)
+      --duration   Stop continuous mode after N minutes (0 = run until interrupted)
   -h, --help       Print help
   -V, --version    Print version
 ```
@@ -228,7 +256,7 @@ Options:
  / ____/ /_/ / /_/ /  / /_/ / / / / / / / /_/ / / / /
 /_/    \__,_/\__/_/   \____/_/_/ /_/ /_/\__,_/_/ /_/
 
-    🛡️  Windows Security Analysis Tool v0.2.0
+    🛡️  Windows Security Analysis Tool v2.2.0
 
 ▶ Networked process enumeration
 ✓ Networked process enumeration (156 items)
@@ -265,7 +293,7 @@ Options:
 
 ### Performance Optimizations
 
-Patrolman v0.2.0 includes production-grade optimizations:
+Patrolman v2.2.0 includes production-grade optimizations:
 
 | Optimization | Description |
 |--------------|-------------|

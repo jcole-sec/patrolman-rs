@@ -20,7 +20,7 @@ impl Config {
         if path.as_ref().exists() {
             let mut ini = Ini::new();
             let loaded_config = ini.load(path.as_ref().to_str().unwrap());
-            
+
             if loaded_config.is_err() {
                 warn!("Failed to load config file: {}", path.as_ref().display());
                 return Ok(config);

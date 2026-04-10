@@ -31,6 +31,14 @@ pub struct Args {
     /// Insert synthetic test data for validation
     #[arg(long, default_value_t = false)]
     pub test: bool,
+
+    /// Repeat scans every N seconds (0 = run once)
+    #[arg(long, default_value_t = 0)]
+    pub interval: u64,
+
+    /// Stop continuous mode after N minutes (0 = run until interrupted)
+    #[arg(long, default_value_t = 0)]
+    pub duration: u64,
 }
 
 impl Args {

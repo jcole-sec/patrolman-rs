@@ -8,8 +8,8 @@ license = "MIT"
 
 [dependencies]
 # Process enumeration and system info
-sysinfo = "0.32"
-windows = { version = "0.58", features = [
+sysinfo = "0.38.4"
+windows = { version = "0.62.2", features = [
     "Win32_Foundation",
     "Win32_System_Threading",
     "Win32_System_ProcessStatus",
@@ -20,8 +20,8 @@ windows = { version = "0.58", features = [
 ] }
 
 # HTTP client for API calls
-reqwest = { version = "0.12", features = ["json", "blocking"] }
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+reqwest = { version = "0.13.3", features = ["json", "blocking"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "time"] }
 futures = "0.3"
 
 # JSON serialization
@@ -32,11 +32,9 @@ serde_json = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 
 # IP address handling
-ipnetwork = "0.20"
 
 # Terminal output
-indicatif = "0.17"
-colored = "2.1"
+colored = "3.1.1"
 comfy-table = "7.1"
 terminal_size = "0.4"
 
@@ -46,22 +44,19 @@ env_logger = "0.11"
 
 # Error handling
 anyhow = "1.0"
-thiserror = "1.0"
 
 # Cryptographic hashing
-sha2 = "0.10"
+sha2 = "0.11.0"
 
 # Configuration file parsing
 configparser = "3.1"
 
 # Hostname
-hostname = "0.4"
 
 # Time handling
 chrono = "0.4"
 
 # Rate limiting and lazy initialization
-async-trait = "0.1"
 lazy_static = "1.5"
 rayon = "1.11.0"
 
