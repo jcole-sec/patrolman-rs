@@ -1,5 +1,5 @@
 # Patrolman
-
+[![Secret Scan](https://github.com/jcole-sec/patrolman-rs/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/jcole-sec/patrolman-rs/actions/workflows/secret-scan.yml)
 ```
     ____        __             __
    / __ \____ _/ /__________  / /___ ___  ____ _____
