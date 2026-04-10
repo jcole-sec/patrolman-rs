@@ -7,7 +7,7 @@
  / ____/ /_/ / /_/ /  / /_/ / / / / / / / /_/ / / / /
 /_/    \__,_/\__/_/   \____/_/_/ /_/ /_/\__,_/_/ /_/
 
-    🛡️  Windows Security Analysis Tool v0.2.0
+    Windows Security Analysis Tool v2.1.0
     Hunt Evil • CTI Enrichment • Network Forensics
 ```
 
@@ -136,8 +136,6 @@ patrolman/
 │   └── display.rs        # Console output & formatting
 ├── assets/
 │   └── Users-Police-icon.ico  # Application icon
-├── docs/
-│   └── SANS_Find_Evil_Know_Normal.md  # Hunt Evil reference
 ├── build.rs              # Windows resource embedding
 ├── Cargo.toml            # Dependencies & metadata
 └── patrolman.conf        # Runtime configuration
@@ -257,7 +255,7 @@ Options:
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Enumeration   │───▶│   Hunt Evil     │───▶│ CTI Enrichment  │───▶│     Output      │
+│   Enumeration   │──▶│   Hunt Evil     │───▶│ CTI Enrichment  │──▶│     Output      │
 │                 │    │                 │    │                 │    │                 │
 │ • sysinfo crate │    │ • SANS baselines│    │ • ThreatFox     │    │ • JSON/TSV      │
 │ • Windows APIs  │    │ • Path checks   │    │ • MalwareBazaar │    │ • Console table │
