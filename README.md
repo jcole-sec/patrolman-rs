@@ -175,6 +175,11 @@ api_max_retries=3
 api_retry_backoff=2.0
 ```
 
+Security note:
+- Prefer environment variable configuration for real API keys.
+- Keep `patrolman.conf` placeholder-only in repository-controlled paths.
+- Set `PATROLMAN_STRICT_SECRET_HYGIENE=1` to fail fast when a likely real key is detected in repo-local `patrolman.conf`.
+
 **Method 2: Environment Variable**
 
 Set the environment variable before running Patrolman:

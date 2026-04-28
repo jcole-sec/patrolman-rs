@@ -63,7 +63,7 @@ pub fn calculate_sha256<P: AsRef<Path>>(path: P) -> Result<String> {
     let mut hasher = Sha256::new();
     hasher.update(&contents);
     let result = hasher.finalize();
-    Ok(format!("{:x}", result))
+    Ok(result.iter().map(|b| format!("{:02x}", b)).collect())
 }
 
 /// Convert Windows IN_ADDR to string IP address
@@ -311,9 +311,9 @@ fn get_process_user(pid: u32) -> String {
             let _ = LookupAccountSidW(
                 None,
                 sid,
-                PWSTR::null(),
+                Some(PWSTR::null()),
                 &mut name_size,
-                PWSTR::null(),
+                Some(PWSTR::null()),
                 &mut domain_size,
                 &mut sid_type,
             );
@@ -325,9 +325,9 @@ fn get_process_user(pid: u32) -> String {
                 if LookupAccountSidW(
                     None,
                     sid,
-                    PWSTR::from_raw(name.as_mut_ptr()),
+                    Some(PWSTR::from_raw(name.as_mut_ptr())),
                     &mut name_size,
-                    PWSTR::from_raw(domain.as_mut_ptr()),
+                    Some(PWSTR::from_raw(domain.as_mut_ptr())),
                     &mut domain_size,
                     &mut sid_type,
                 )

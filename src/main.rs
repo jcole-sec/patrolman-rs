@@ -6,7 +6,7 @@ mod huntevil;
 mod process;
 mod types;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use chrono::Local;
 use colored::*;
 use std::path::PathBuf;
@@ -211,6 +211,29 @@ async fn main() -> Result<()> {
 
     // Load configuration
     let config = Config::load("patrolman.conf")?;
+
+    // Secret hygiene checks (warn by default, optional strict failure mode)
+    if config.insecure_config_key_detected {
+        if let Some(message) = &config.secret_hygiene_message {
+            eprintln!("{} {}", "[!]".bright_red().bold(), message.bright_red());
+            eprintln!(
+                "{}",
+                "    Recommendation: set THREATFOX_API_KEY in your environment and replace patrolman.conf key with a placeholder."
+                    .bright_black()
+            );
+        }
+
+        let strict_secret_hygiene = std::env::var("PATROLMAN_STRICT_SECRET_HYGIENE")
+            .map(|v| {
+                let normalized = v.trim().to_ascii_lowercase();
+                matches!(normalized.as_str(), "1" | "true" | "yes" | "on")
+            })
+            .unwrap_or(false);
+
+        if strict_secret_hygiene {
+            bail!("Strict secret hygiene check failed due to repo-local API key in patrolman.conf");
+        }
+    }
 
     // Display banner
     display_banner();

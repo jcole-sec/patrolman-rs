@@ -455,7 +455,8 @@ async fn malwarebazaar_hash_lookup(
     let response = match client
         .post(MALWAREBAZAAR_URL)
         .header("Auth-Key", api_key)
-        .form(&params)
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(format!("query={}&hash={}", params[0].1, params[1].1))
         .send()
         .await
     {

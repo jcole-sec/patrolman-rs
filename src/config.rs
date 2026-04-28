@@ -7,6 +7,9 @@ use std::path::Path;
 #[derive(Debug, Clone)]
 pub struct Config {
     pub threatfox_api_key: Option<String>,
+    pub key_loaded_from_config: bool,
+    pub insecure_config_key_detected: bool,
+    pub secret_hygiene_message: Option<String>,
     pub api_request_delay: f64,
     pub api_max_retries: u32,
     pub api_retry_backoff: f64,
@@ -30,7 +33,27 @@ impl Config {
             if let Some(key) = ini.get("default", "threatfox_api_key") {
                 let cleaned_key = key.trim().trim_matches('"').to_string();
                 if !cleaned_key.is_empty() {
+                    // Secret hygiene guardrail: detect likely real keys in repo-local config files.
+                    let key_looks_real = cleaned_key.len() >= 24
+                        && cleaned_key.chars().all(|c| c.is_ascii_hexdigit());
+                    let is_repo_local_patrolman_conf = path
+                        .as_ref()
+                        .file_name()
+                        .and_then(|f| f.to_str())
+                        .map(|f| f.eq_ignore_ascii_case("patrolman.conf"))
+                        .unwrap_or(false)
+                        && Path::new(".git").exists();
+
+                    if key_looks_real && is_repo_local_patrolman_conf {
+                        config.insecure_config_key_detected = true;
+                        config.secret_hygiene_message = Some(
+                            "Detected what looks like a real API key in repo-local patrolman.conf. Prefer THREATFOX_API_KEY environment variable and keep patrolman.conf uncommitted or placeholder-only."
+                                .to_string(),
+                        );
+                    }
+
                     config.threatfox_api_key = Some(cleaned_key);
+                    config.key_loaded_from_config = true;
                 }
             }
 
@@ -61,6 +84,7 @@ impl Config {
         // Environment variable takes precedence over config file
         if let Ok(env_key) = env::var("THREATFOX_API_KEY") {
             config.threatfox_api_key = Some(env_key);
+            config.key_loaded_from_config = false;
         }
 
         // Log configuration status
@@ -83,6 +107,9 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             threatfox_api_key: None,
+            key_loaded_from_config: false,
+            insecure_config_key_detected: false,
+            secret_hygiene_message: None,
             api_request_delay: 0.1,
             api_max_retries: 3,
             api_retry_backoff: 2.0,

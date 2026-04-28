@@ -8,6 +8,7 @@
 # Get your free API key at: https://abuse.ch/register/
 # This single key works for all abuse.ch services
 # Leave empty to disable config file loading (use environment variable: THREATFOX_API_KEY)
+# Security recommendation: keep this placeholder in repo-local files and set real keys via environment variables.
 threatfox_api_key=key_goes_here
 
 # RIPE API (No key required - public API)
